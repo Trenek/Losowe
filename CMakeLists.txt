@@ -4,11 +4,18 @@ project(Losowy)
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 
-add_executable(Losowy "socket.c")
+add_subdirectory(mySocketLib)
 
-if (WIN32)
-    target_link_libraries(Losowy ws2_32)
-endif()
+add_executable(Losowy 
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/main.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/page.c"
+)
+
+target_link_libraries(Losowy Sockets)
+target_include_directories(Losowy PRIVATE 
+    Sockets
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/"
+)
 
 set(PAGE_SRC "${CMAKE_SOURCE_DIR}/page")
 set(PAGE_DST "${CMAKE_BINARY_DIR}/page")
