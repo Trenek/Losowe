@@ -1,12 +1,13 @@
 #include <stdint.h>
 
 struct PageData {
-    char *page;
     char *header;
+    char *data;
 
     size_t headerSize;
-    size_t pageSize;
+    size_t dataSize;
 }; 
 
-struct PageData loadPage();
-void freePage(struct PageData page);
+void freeData(struct PageData page);
+
+struct PageData loadData(char *fileName);

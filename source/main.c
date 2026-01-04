@@ -6,18 +6,42 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
-bool sendSite(int clinet_socket, size_t addrlen, struct sockaddr_in addr, struct PageData page) {
-    char buffer[BUFFER_SIZE] = {0};
+#ifdef WIN32
+#include <io.h>
+#define F_OK 0
+#define access _access
+#endif
+
+bool sendSite(int clinet_socket, size_t addrlen, struct sockaddr_in addr) {
+    char buffer[BUFFER_SIZE] = { };
+    char fileBuffer[BUFFER_SIZE] = { };
+
+    struct PageData page;
 
     int new_socket = accept(clinet_socket, (struct sockaddr *)&addr, (void*)&addrlen);
     bool result = new_socket >= 0;
 
     recv(new_socket, buffer, BUFFER_SIZE, 0);
 
-    printf("%s", buffer);
+    char *method = strtok(buffer, " ");
+    char *file = strtok(NULL, " ");
 
-    send(new_socket, page.header, page.headerSize, 0);
-    send(new_socket, page.page, page.pageSize, 0);
+    if (0 == strncmp(method, "GET", 3)) {
+        if (0 == strncmp(file, "/", 2)) {
+            file = "/page.html";
+        }
+    }
+
+    sprintf(fileBuffer, "page%s", file);
+
+    if (0 == access(fileBuffer, F_OK)) {
+        page = loadData(fileBuffer);
+
+        send(new_socket, page.header, page.headerSize, 0);
+        send(new_socket, page.data, page.dataSize, 0);
+
+        freeData(page);
+    }
 
     sockClose(new_socket);
 
@@ -38,17 +62,13 @@ int main(int argc, char *argv[]){
         .sin_port = htons(PORT),
     };
 
-    struct PageData page = loadPage();
-
 	IF (0 == sockInit(), 1)
 	IF (0 <= (client_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)), 2)
     IF (!setsockopt(client_socket, SOL_SOCKET, SO_REUSE, (char *)&opt, sizeof(opt)), 3)
     IF (0 >= bind(client_socket, (struct sockaddr *)&address, sizeof(address)), 4)
     IF (0 >= listen(client_socket, 3), 5) while (
-        sendSite(client_socket, sizeof(address), address, page)
+        sendSite(client_socket, sizeof(address), address)
     );
-
-    freePage(page);
 
     sockClose(client_socket);
     sockQuit();

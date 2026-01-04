@@ -4,6 +4,8 @@
 
 #include "page.h"
 
+#define BUFFER 1024
+
 static long getFileSize(FILE *fp) {
     long result = 0;
 
@@ -29,27 +31,56 @@ static char *loadFile(char *name, size_t *size) {
     return result;
 }
 
-struct PageData loadPage() {
-    char header[] = 
-        "HTTP/1.1 200 OK\n"
-        "Content-Type: text/html\n"
-        "Content-Length: %ld\n"
-        "\n";
+char *fileExtensions[] = {
+    "html",
+    "ico",
+    "gif"
+};
+constexpr size_t extensionsQ = sizeof(fileExtensions) / sizeof(char *);
 
-    long pageSize = 0;
+char *contentTypes[] = {
+    "text/html",
+    "image/x-icon",
+    "image/gif"
+};
 
-    struct PageData result = {
-        .header = malloc(sizeof(header)),
-        .headerSize = sizeof(header) / sizeof(char),
-        .page = loadFile("page/page.html", &result.pageSize)
-    };
+char *getContentType(char *file) {
+    char *extension = strchr(file, '.') + 1;
+    char *result = NULL;
 
-    memcpy(result.header, header, sizeof(header));
+    for (int i = 0; i < extensionsQ; i += 1) {
+        if (0 == strncmp(extension, fileExtensions[i], strlen(fileExtensions[i]))) {
+            result = contentTypes[i];
+        }
+    }
 
     return result;
 }
 
-void freePage(struct PageData page) {
+struct PageData loadData(char *fileName) {
+    char buffer[1024] = {};
+    size_t dataSize = 0;
+
+    struct PageData result = {
+        .data = loadFile(fileName, &dataSize)
+    };
+    result.dataSize = dataSize;
+
+    size_t headerLength = sprintf(buffer, 
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Type: %s\r\n"
+        "Content-Length: %ld\r\n"
+        "\r\n", getContentType(fileName), result.dataSize);
+
+    result.header = malloc(headerLength + 1),
+    result.headerSize = headerLength * sizeof(char),
+
+    memcpy(result.header, buffer, result.headerSize);
+
+    return result;
+}
+
+void freeData(struct PageData page) {
     free(page.header);
-    free(page.page);
+    free(page.data);
 }
