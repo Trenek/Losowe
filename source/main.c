@@ -6,42 +6,37 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
-#ifdef WIN32
-#include <io.h>
-#define F_OK 0
-#define access _access
-#endif
+void get(int socket) {
+    char fileBuffer[BUFFER_SIZE] = { };
+
+    char *file = strtok(NULL, " ");
+
+    if (0 == strncmp(file, "/", 2)) {
+        file = "/page.html";
+    }
+
+    sprintf(fileBuffer, "page%s", file);
+
+    struct PageData data = loadData(fileBuffer);
+
+    send(socket, data.header, data.headerSize, 0);
+    send(socket, data.data, data.dataSize, 0);
+
+    freeData(data);
+}
 
 bool sendSite(int clinet_socket, size_t addrlen, struct sockaddr_in addr) {
     char buffer[BUFFER_SIZE] = { };
-    char fileBuffer[BUFFER_SIZE] = { };
-
-    struct PageData page;
 
     int new_socket = accept(clinet_socket, (struct sockaddr *)&addr, (void*)&addrlen);
     bool result = new_socket >= 0;
 
     recv(new_socket, buffer, BUFFER_SIZE, 0);
+    printf("%s\n", buffer);
 
     char *method = strtok(buffer, " ");
-    char *file = strtok(NULL, " ");
 
-    if (0 == strncmp(method, "GET", 3)) {
-        if (0 == strncmp(file, "/", 2)) {
-            file = "/page.html";
-        }
-    }
-
-    sprintf(fileBuffer, "page%s", file);
-
-    if (0 == access(fileBuffer, F_OK)) {
-        page = loadData(fileBuffer);
-
-        send(new_socket, page.header, page.headerSize, 0);
-        send(new_socket, page.data, page.dataSize, 0);
-
-        freeData(page);
-    }
+    if (0 == strncmp(method, "GET", 3)) get(new_socket);
 
     sockClose(new_socket);
 

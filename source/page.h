@@ -8,6 +8,5 @@ struct PageData {
     size_t dataSize;
 }; 
 
-void freeData(struct PageData page);
-
 struct PageData loadData(char *fileName);
+void freeData(struct PageData page);
