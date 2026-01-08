@@ -34,14 +34,16 @@ static char *loadFile(char *name, size_t *size) {
 char *fileExtensions[] = {
     "html",
     "ico",
-    "gif"
+    "gif",
+    "mp3"
 };
 constexpr size_t extensionsQ = sizeof(fileExtensions) / sizeof(char *);
 
 char *contentTypes[] = {
     "text/html",
     "image/x-icon",
-    "image/gif"
+    "image/gif",
+    "audio/mpeg"
 };
 
 char *getContentType(char *file) {
